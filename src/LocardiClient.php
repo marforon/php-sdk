@@ -9,8 +9,6 @@ class LocardiClient
 {
     const DEFAULT_ENDPOINT = '';
 
-    const DEFAULT_AUTH_ENDPOINT = '';
-
     private $client;
 
     /**
@@ -33,7 +31,7 @@ class LocardiClient
         $password = $config['password'];
         $tokenStorage = $config['tokenStorage'];
         $endpoint = isset($config['endpoint']) ? $config['endpoint'] : self::DEFAULT_ENDPOINT;
-        $authEndpoint = isset($config['authEndpoint']) ? $config['authEndpoint'] : self::DEFAULT_ENDPOINT;
+        $authEndpoint = $endpoint;
 
         $httpClient = new HttpClient();
 
