@@ -26,11 +26,11 @@ class FileTokenStorage implements TokenStorageInterface
         }
 
         if (!file_exists($this->getFilePath())) {
-            file_put_contents($this->getFilePath(), json_encode([]));
+            $this->writeFile([]);
         }
     }
 
-    private function getFilePath()
+    public function getFilePath()
     {
         return sprintf('%s/%s', $this->dir, self::FILE_NAME);
     }
@@ -76,5 +76,10 @@ class FileTokenStorage implements TokenStorageInterface
         }
 
         $this->writeFile($data);
+    }
+
+    public function destroy()
+    {
+        unlink($this->getFilePath());
     }
 }

@@ -2,8 +2,13 @@
 
 namespace Locardi\PhpSdk;
 
-use Locardi\PhpSdk\Client;
-use Locardi\PhpSdk\HttpClient\Client as HttpClient;
+use Locardi\PhpSdk\Api\AuthApi;
+use Locardi\PhpSdk\Api\OrganizationUserRequestApi;
+use Locardi\PhpSdk\Authentication\JwtAuthentication;
+use Locardi\PhpSdk\Exception\ClientException;
+use Locardi\PhpSdk\HttpClient\CurlClient;
+use Locardi\PhpSdk\HttpClient\SocketClient;
+use Locardi\PhpSdk\Serializer\JsonSerializer;
 
 class LocardiClient
 {
@@ -15,6 +20,7 @@ class LocardiClient
      * LocardiClient constructor.
      *
      * Config
+     * - debug [optional] default is false
      * - username [required]
      * - password [required]
      * - tokenStorage [required] A TokenStorageInterface object for saving the JWT token
@@ -25,57 +31,63 @@ class LocardiClient
      */
     public function __construct(array $config)
     {
-        $this->validateConfigFields($config);
+        // required params
+        $debug = $this->getRequiredParam($config, 'debug');
+        $username = $this->getRequiredParam($config, 'username');
+        $password = $this->getRequiredParam($config, 'password');
+        $tokenStorage = $this->getRequiredParam($config, 'tokenStorage');
 
-        $username = $config['username'];
-        $password = $config['password'];
-        $tokenStorage = $config['tokenStorage'];
-        $endpoint = isset($config['endpoint']) ? $config['endpoint'] : self::DEFAULT_ENDPOINT;
-        $authEndpoint = $endpoint;
+        // optional params
+        $endpoint = $this->getParam($config, 'endpoint', self::DEFAULT_ENDPOINT);
 
-        $httpClient = new HttpClient();
+        $jsonSerializer = new JsonSerializer();
+        $curlClient = new CurlClient();
 
-        $authentication = new \Locardi\PhpSdk\Authentication\JwtAuthentication(
-            $httpClient,
-            $authEndpoint,
+        $authentication = new JwtAuthentication(
+            $curlClient,
+            $endpoint,
+            new AuthApi(),
             $username,
             $password,
+            $jsonSerializer,
             $tokenStorage
         );
-
-        $serializer = new \Locardi\PhpSdk\Serializer\JsonSerializer();
 
         $this->client = new Client(
             $endpoint,
             $authentication,
-            $httpClient,
-            $serializer
+            $debug ? $curlClient : new SocketClient(),
+            $jsonSerializer
         );
     }
 
-    private function getRequiredConfigFields()
+    private function getParam(array $params, $key, $default = null)
     {
-        return array(
-            'username',
-            'password',
-            'tokenStorage',
-        );
-    }
-
-    private function validateConfigFields(array $config)
-    {
-        foreach ($this->getRequiredConfigFields() as $requiredConfigField) {
-            if (!isset($config[$requiredConfigField])) {
-                throw new \Exception(sprintf('Config field %s is required.', $requiredConfigField));
-            }
+        if (isset($params[$key])) {
+            return $params[$key];
         }
+
+        return $default;
+    }
+
+    private function getRequiredParam(array $params, $key)
+    {
+        if (isset($params[$key])) {
+            return $params[$key];
+        }
+
+        throw new ClientException(sprintf('Required param %s is missing.', $key));
     }
 
     public function send(array $data)
     {
-        $this
-            ->client
-            ->send($data)
-        ;
+        if (isset($data['organization_user_request'])) {
+            $this
+                ->client
+                ->send(new OrganizationUserRequestApi(), $data)
+            ;
+        } else {
+            throw new ClientException('Invalid API');
+        }
     }
 }

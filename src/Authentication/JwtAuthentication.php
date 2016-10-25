@@ -2,32 +2,54 @@
 
 namespace Locardi\PhpSdk\Authentication;
 
+use Locardi\PhpSdk\Api\AuthApi;
 use Locardi\PhpSdk\Exception\AuthenticationException;
-use Locardi\PhpSdk\HttpClient\Client;
 use Locardi\PhpSdk\Authentication\JwtAuthentication\TokenStorage\TokenStorageInterface;
+use Locardi\PhpSdk\HttpClient\CurlClient;
+use Locardi\PhpSdk\Serializer\JsonSerializer;
 use Symfony\Component\HttpFoundation\Request;
 
 class JwtAuthentication
 {
+    const HTTP_HEADER_TOKEN = 'X-Access-Token';
+
     const KEY = 'jtw_token';
 
-    private $httpClient;
+    private $client;
 
-    private $authEndpoint;
+    private $endpoint;
+
+    private $api;
 
     private $username;
 
     private $password;
 
+    private $jsonSerializer;
+
     private $tokenStorage;
 
-    public function __construct(Client $httpClient, $authEndpoint, $username, $password, TokenStorageInterface $tokenStorage)
-    {
-        $this->httpClient = $httpClient;
-        $this->authEndpoint = $authEndpoint;
+    public function __construct(
+        CurlClient $client,
+        $endpoint,
+        AuthApi $api,
+        $username,
+        $password,
+        JsonSerializer $jsonSerializer,
+        TokenStorageInterface $tokenStorage
+    ) {
+        $this->client = $client;
+        $this->endpoint = $endpoint;
+        $this->api = $api;
         $this->username = $username;
         $this->password = $password;
+        $this->jsonSerializer = $jsonSerializer;
         $this->tokenStorage = $tokenStorage;
+    }
+
+    private function getAuthUrl()
+    {
+        return sprintf('%s%s', $this->endpoint, $this->api->getPath());
     }
 
     public function getToken()
@@ -40,12 +62,18 @@ class JwtAuthentication
             return $token;
         }
 
-        $data = array(
-            '_username' => $this->username,
-            '_password' => $this->password,
-        );
+        return $this->getNewToken();
+    }
 
-        $data = json_encode($data);
+    private function getNewToken()
+    {
+        $requestContent = $this
+            ->jsonSerializer
+            ->serialize(array(
+                '_username' => $this->username,
+                '_password' => $this->password,
+            ))
+        ;
 
         $request = new Request(
             array(), // query
@@ -54,14 +82,14 @@ class JwtAuthentication
             array(), //cookies
             array(), // files
             array(), // server
-            $data
+            $requestContent
         );
 
         $request->setMethod(Request::METHOD_POST);
 
         $response = $this
-            ->httpClient
-            ->send($this->authEndpoint, $request)
+            ->client
+            ->send($this->getAuthUrl(), $request)
         ;
 
         switch ($response->getStatusCode()) {
@@ -72,7 +100,10 @@ class JwtAuthentication
                 throw new AuthenticationException(sprintf('Authentication error: %s', $response->getContent()));
         }
 
-        $contentArray = json_decode($content, true);
+        $contentArray = $this
+            ->jsonSerializer
+            ->unserialize($content)
+        ;
 
         if (!isset($contentArray['success'])) {
             throw new AuthenticationException(sprintf('Auth response format broken. %s', $response->getContent()));
@@ -88,11 +119,45 @@ class JwtAuthentication
         return $token;
     }
 
-    public function updateRequest(Request $request)
+    public function increaseUsageCounter()
     {
+        $count = $this->getUsageCounter();
+
+        $this
+            ->tokenStorage
+            ->write('usages', ++$count)
+        ;
+
+        return $count;
+    }
+
+    public function getUsageCounter()
+    {
+        return $this
+            ->tokenStorage
+            ->read('usages', 0)
+        ;
+    }
+
+    public function destroy()
+    {
+        $this
+            ->tokenStorage
+            ->destroy()
+        ;
+    }
+
+    public function updateRequest(Request $request, $forceNewToken = false)
+    {
+        if ($forceNewToken) {
+            $token = $this->getNewToken();
+        } else {
+            $token = $this->getToken();
+        }
+
         $request
             ->headers
-            ->set('X-Access-Token', $this->getToken())
+            ->set(self::HTTP_HEADER_TOKEN, $token)
         ;
     }
 }
