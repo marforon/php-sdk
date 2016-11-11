@@ -22,7 +22,7 @@ $client = new LocardiClient(array(
 
 $client->send(array(
     'request_type' => 'html_page',
-    'ip_v4' => '8.8.8.8',
+    'ip_address' => '8.8.8.8',
     'http_method' => 'POST',
     'timestamp' => date('c'),
     'user_agent' => $_SERVER['HTTP_USER_AGENT'],
