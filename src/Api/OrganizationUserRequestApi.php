@@ -13,6 +13,6 @@ class OrganizationUserRequestApi implements ApiInterface
 
     public function getPath()
     {
-        return '/api/request';
+        return '/collector/request';
     }
 }
