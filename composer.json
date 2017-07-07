@@ -1,6 +1,7 @@
 {
     "name": "locardi/php-sdk",
     "require": {
+        "php": ">=5.3.9",
         "ext-curl": "*",
         "symfony/http-foundation": "~2.0"
     },

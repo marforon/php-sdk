@@ -12,7 +12,7 @@ use Locardi\PhpSdk\Serializer\JsonSerializer;
 
 class LocardiClient
 {
-    const DEFAULT_ENDPOINT = '';
+    const DEFAULT_ENDPOINT = 'brain-web-collector-prod.locardiapp.com';
 
     private $client;
 
