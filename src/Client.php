@@ -7,9 +7,8 @@ use Locardi\PhpSdk\Authentication\JwtAuthentication;
 use Locardi\PhpSdk\Exception\ClientException;
 use Locardi\PhpSdk\HttpClient\CurlClient;
 use Locardi\PhpSdk\HttpClient\HttpClientInterface;
-use Locardi\PhpSdk\HttpClient\SocketClient;
 use Locardi\PhpSdk\Serializer\SerializerInterface;
-use Symfony\Component\HttpFoundation\Request;
+use Zend\Diactoros\Request;
 
 class Client
 {
@@ -68,7 +67,7 @@ class Client
                 // all good
                 break;
             case 400: // bad request
-                throw new ClientException(sprintf('Bad request. %s.', $response->getContent()));
+                throw new ClientException(sprintf('Bad request. %s.', $response->getBody()));
             case 401: // unauthorized
                 // it might be that the token is wrong or no longer valid
                 throw new ClientException('Unauthorized, the token could not be validated.');
@@ -86,31 +85,19 @@ class Client
             ->serialize($data)
         ;
 
-        $request = new Request(
-            array(), // query
-            array(), // request
-            array(), // attributes
-            array(), //cookies
-            array(), // files
-            array(), // server
-            $content
-        );
 
-        $request->setMethod($api->getMethod());
+        $headers = [
+            'Content-Type' => $this->serializer->getHttpHeaderContentType(),
+            'Content-Length' => strlen($content),
+        ];
+
+        $headers = array_merge($headers, $this->auth->getAuthHeaders($forceNewToken));
+
+        $request = new Request(null, $api->getMethod(), 'php://temp', $headers);
 
         $request
-            ->headers
-            ->set('Content-Type', $this->serializer->getHttpHeaderContentType())
-        ;
-
-        $request
-            ->headers
-            ->set('Content-Length', strlen($content))
-        ;
-
-        $this
-            ->auth
-            ->updateRequest($request, $forceNewToken)
+            ->getBody()
+            ->write($content)
         ;
 
         return $request;

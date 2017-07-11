@@ -2,9 +2,8 @@
 
 namespace Locardi\PhpSdk\HttpClient;
 
-use Locardi\PhpSdk\Authentication\JwtAuthentication\TokenStorage\FileTokenStorage;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Zend\Diactoros\Request;
+use Zend\Diactoros\Response;
 
 class SocketClient implements HttpClientInterface
 {
@@ -14,8 +13,12 @@ class SocketClient implements HttpClientInterface
 
         $path = isset($parts['path']) ? $parts['path'] : '';
 
-        if ($request->getQueryString()) {
-            $path .= '?' . $request->getQueryString();
+        $queryString = $request
+            ->getUri()
+            ->getQuery()
+        ;
+        if ($queryString) {
+            $path .= '?' . $queryString;
         }
 
         $host = $parts['host'];
@@ -57,8 +60,8 @@ class SocketClient implements HttpClientInterface
             $out[] = sprintf("%s", $header);
         }
         $out[] = "Connection: Close\r\n";
-        if ($request->getContent()) {
-            $out[] = $request->getContent();
+        if ($request->getBody()) {
+            $out[] = $request->getBody();
         }
 
         $out = implode("\r\n", $out);

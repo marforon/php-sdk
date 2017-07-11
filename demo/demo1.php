@@ -11,8 +11,8 @@ use Locardi\PhpSdk\Api\OrganizationUserRequestApi;
 
 $client = new LocardiClient(array(
     'debug' => true,
-    'username' => 'myusername',
-    'password' => 'mypassword',
+    'username' => 'michael_test2',
+    'password' => 'michael_test2',
     'tokenStorage' => new FileTokenStorage(__DIR__),
 ));
 

@@ -7,7 +7,7 @@ use Locardi\PhpSdk\Exception\AuthenticationException;
 use Locardi\PhpSdk\Authentication\JwtAuthentication\TokenStorage\TokenStorageInterface;
 use Locardi\PhpSdk\HttpClient\CurlClient;
 use Locardi\PhpSdk\Serializer\JsonSerializer;
-use Symfony\Component\HttpFoundation\Request;
+use Zend\Diactoros\Request;
 
 class JwtAuthentication
 {
@@ -75,17 +75,12 @@ class JwtAuthentication
             ))
         ;
 
-        $request = new Request(
-            array(), // query
-            array(), // request
-            array(), // attributes
-            array(), //cookies
-            array(), // files
-            array(), // server
-            $requestContent
-        );
+        $request = new Request(null, 'POST');
 
-        $request->setMethod(Request::METHOD_POST);
+        $request
+            ->getBody()
+            ->write($requestContent)
+        ;
 
         $response = $this
             ->client
@@ -94,10 +89,10 @@ class JwtAuthentication
 
         switch ($response->getStatusCode()) {
             case 200:
-                $content = $response->getContent();
+                $content = $response->getBody();
                 break;
             default:
-                throw new AuthenticationException(sprintf('Authentication error: %s', $response->getContent()));
+                throw new AuthenticationException(sprintf('Authentication error: %s', $response->getBody()));
         }
 
         $contentArray = $this
@@ -106,7 +101,7 @@ class JwtAuthentication
         ;
 
         if (!isset($contentArray['success'])) {
-            throw new AuthenticationException(sprintf('Auth response format broken. %s', $response->getContent()));
+            throw new AuthenticationException(sprintf('Auth response format broken. %s', $response->getBody()));
         }
 
         $token = $contentArray['token'];
@@ -147,7 +142,11 @@ class JwtAuthentication
         ;
     }
 
-    public function updateRequest(Request $request, $forceNewToken = false)
+    /**
+     * @param bool $forceNewToken
+     * @return string[]
+     */
+    public function getAuthHeaders($forceNewToken = false)
     {
         if ($forceNewToken) {
             $token = $this->getNewToken();
@@ -155,9 +154,8 @@ class JwtAuthentication
             $token = $this->getToken();
         }
 
-        $request
-            ->headers
-            ->set(self::HTTP_HEADER_TOKEN, $token)
-        ;
+        return [
+            self::HTTP_HEADER_TOKEN => $token,
+        ];
     }
 }

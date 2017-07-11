@@ -2,8 +2,8 @@
 
 namespace Locardi\PhpSdk\HttpClient;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Zend\Diactoros\Request;
+use Zend\Diactoros\Response;
 
 interface HttpClientInterface
 {

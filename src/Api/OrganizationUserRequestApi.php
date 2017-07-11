@@ -2,8 +2,6 @@
 
 namespace Locardi\PhpSdk\Api;
 
-use Symfony\Component\HttpFoundation\Request;
-
 class OrganizationUserRequestApi implements ApiInterface
 {
     const REQUEST_TYPE_HTML_PAGE = 'html_page';
@@ -16,7 +14,7 @@ class OrganizationUserRequestApi implements ApiInterface
 
     public function getMethod()
     {
-        return Request::METHOD_POST;
+        return 'POST';
     }
 
     public function getPath()

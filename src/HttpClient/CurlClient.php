@@ -2,8 +2,8 @@
 
 namespace Locardi\PhpSdk\HttpClient;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Zend\Diactoros\Request;
+use Zend\Diactoros\Response;
 
 class CurlClient implements HttpClientInterface
 {
@@ -11,8 +11,13 @@ class CurlClient implements HttpClientInterface
     {
         $ch = curl_init();
 
-        if ($request->getQueryString()) {
-            $url = sprintf('%s?%s', $url, $request->getQueryString());
+        $queryString = $request
+            ->getUri()
+            ->getQuery()
+        ;
+
+        if ($queryString) {
+            $url = sprintf('%s?%s', $url, $queryString);
         }
 
         curl_setopt_array($ch, array(
@@ -21,12 +26,12 @@ class CurlClient implements HttpClientInterface
             CURLOPT_HTTPHEADER => $this->extractHeaders($request),
         ));
 
-        switch ($request->getMethod()) {
-            case Request::METHOD_GET:
+        switch (strtolower($request->getMethod())) {
+            case 'get':
                 break;
-            case Request::METHOD_POST:
+            case 'post':
                 curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $request->getContent());
+                curl_setopt($ch, CURLOPT_POSTFIELDS, (string) $request->getBody());
                 break;
             default:
                 throw new \Exception(sprintf('Method %s not supported.', $request->getMethod()));
@@ -40,9 +45,14 @@ class CurlClient implements HttpClientInterface
 
         $info = curl_getinfo($ch);
 
-        $response = new Response($result, $info['http_code'], array(
+        $response = new Response('php://memory', $info['http_code'], [
             'Content-Type' => $info['content_type'],
-        ));
+        ]);
+
+        $response
+            ->getBody()
+            ->write($result)
+        ;
 
         curl_close($ch);
 
@@ -52,7 +62,7 @@ class CurlClient implements HttpClientInterface
     private function extractHeaders(Request $request)
     {
         $headers = array();
-        foreach ($request->headers as $name => $value) {
+        foreach ($request->getHeaders() as $name => $value) {
             $headers[] = sprintf('%s: %s', $name, $value[0]);
         }
 
