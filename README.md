@@ -19,6 +19,7 @@ $client = new LocardiClient(array(
     'password' => 'mypassword',
     'endpoint' => '', // this is optional and overrides the API endpoing (used for sandbox)
     'tokenStorage' => new FileTokenStorage(__DIR__),
+    'timeout' => 10, // OPTIONAL number of senconds before curl timeout (default is 30 seconds) 
 ));
 
 $client->send(array(

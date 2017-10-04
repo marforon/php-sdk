@@ -11,9 +11,10 @@ use Locardi\PhpSdk\Api\OrganizationUserRequestApi;
 
 $client = new LocardiClient(array(
     'debug' => true,
-    'username' => 'michael_test2',
-    'password' => 'michael_test2',
+    'username' => 'username',
+    'password' => 'password',
     'tokenStorage' => new FileTokenStorage(__DIR__),
+    'timeout' => 10, // default is 30 seconds
 ));
 
 $client->send(array(

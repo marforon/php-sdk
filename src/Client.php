@@ -85,7 +85,6 @@ class Client
             ->serialize($data)
         ;
 
-
         $headers = [
             'Content-Type' => $this->serializer->getHttpHeaderContentType(),
             'Content-Length' => strlen($content),

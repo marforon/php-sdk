@@ -7,6 +7,13 @@ use Zend\Diactoros\Response;
 
 class CurlClient implements HttpClientInterface
 {
+    private $timeout;
+
+    public function __construct($timeout)
+    {
+        $this->timeout = $timeout;
+    }
+
     public function send($url, Request $request)
     {
         $ch = curl_init();
@@ -24,6 +31,7 @@ class CurlClient implements HttpClientInterface
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => 1,
             CURLOPT_HTTPHEADER => $this->extractHeaders($request),
+            CURLOPT_TIMEOUT => $this->timeout,
         ));
 
         switch (strtolower($request->getMethod())) {
