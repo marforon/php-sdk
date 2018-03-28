@@ -24,7 +24,7 @@ $client = new LocardiClient(array(
 
 $client->send(array(
     'organization_user_request' => array(
-        // this is the type of the page that the user has opened (html_page,login,login_failed,login_failed_wrong_username,login_failed_wrong_password,download)
+        // this is the type of the page that the user has opened (html_page,login,login_failed,download)
         'request_type' => OrganizationUserRequestApi::REQUEST_TYPE_HTML_PAGE,
         // the IP Address of the user
         'ip_address' => '8.8.8.8',
@@ -62,8 +62,6 @@ You can send requests with different types base on what you need to track:
 - `OrganizationUserRequestApi::REQUEST_TYPE_HTML_PAGE` when the user visits a normal web page
 - `OrganizationUserRequestApi::REQUEST_TYPE_LOGIN` when the user is attempting the login
 - `OrganizationUserRequestApi::REQUEST_TYPE_LOGIN_FAILED` when the login attempt has failed for any reason
-- `OrganizationUserRequestApi::REQUEST_TYPE_LOGIN_FAILED_WRONG_USERNAME` when the login attempt failed due to a username/email that are not in your database
-- `OrganizationUserRequestApi::REQUEST_TYPE_LOGIN_FAILED_WRONG_PASSWORD` when the login attempt failed due to a wrong password
 - `OrganizationUserRequestApi::REQUEST_TYPE_DOWNLOAD` when the user has downloaded a file
 
 ## User types
