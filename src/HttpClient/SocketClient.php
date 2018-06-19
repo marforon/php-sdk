@@ -76,7 +76,7 @@ class SocketClient implements HttpClientInterface
     private function extractHeaders(Request $request)
     {
         $headers = array();
-        foreach ($request->headers as $name => $value) {
+        foreach ($request->getHeaders() as $name => $value) {
             $headers[] = sprintf('%s: %s', $name, $value[0]);
         }
 
